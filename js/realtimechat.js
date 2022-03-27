@@ -1,6 +1,6 @@
 /**
  * @author Martin Düppenbecker
- * @since 20.03.22
+ * @since 27.03.22
  * 
  */
 
@@ -11,9 +11,10 @@ const CHATSERVER = "127.0.0.1";
 
 //Festsetzung anderer Konstanten & Variablen
 
-const seiteLogin = 1;
-const seiteAuswahl = 2;
-const seiteChat = 3;
+const SEITE_LOGIN = 1;
+const SEITE_REGISTRIEREN = 2;
+const SEITE_AUSWAHL = 3;
+const SEITE_CHAT = 4;
 
 
 var aktuelleSeite;
@@ -22,8 +23,6 @@ var chatDivHeader;
 var chatDivContent;
 var chatSchliessen;
 var chatZurueck;
-var chatTestButton;
-var chatDivContent;
 //Map mit allen Chats. So kann man sehen, welchem Chat was gehört
 var chatMap = new Map(); 
 
@@ -57,28 +56,25 @@ function spawnChat(){
   chatZurueck = document.createElement('button');
   chatZurueck.className = "chatZurueck";
   chatZurueck.innerHTML = '<img src="icons/back.png" height=10 width=10>';
+
   chatZurueck.addEventListener('click', () => {
+    if (aktuelleSeite - 1 == 2){  //Skip Registrier-Seite
+      aktuelleSeite--;
+    }
     neueSeite(aktuelleSeite - 1, chatDiv.id);
   });
   
-  
 
-  chatTestButton = document.createElement('button');
-  chatTestButton.textContent = "test";
-  chatTestButton.addEventListener('click', () => {
-    neueSeite(2, chatDiv.id);
-  });
 
 
   chatDivContent = document.createElement('div');
   chatDivContent.className = "chatDivContent";
 
-  aktuelleSeite = seiteLogin;
+  aktuelleSeite = SEITE_LOGIN;
 
 
   chatDivHeader.appendChild(chatSchliessen);
   chatDivHeader.appendChild(chatZurueck);
-  chatDivHeader.appendChild(chatTestButton);
   chatDiv.appendChild(chatDivHeader);
   chatDiv.appendChild(chatDivContent);
 
@@ -88,7 +84,7 @@ function spawnChat(){
   updateVars(anzGespawnterChats);
 
 
-  neueSeite(seiteLogin, anzGespawnterChats);
+  neueSeite(SEITE_LOGIN, anzGespawnterChats);
 
   addDragElement(chatDiv);
 
@@ -104,7 +100,6 @@ function loadVars(id){
   this.chatDivHeader = chatObj.chatDivHeader;
   this.chatSchliessen = chatObj.chatSchliessen;
   this.chatZurueck = chatObj.chatZurueck;
-  this.chatTestButton = chatObj.chatTestButton;
   this.chatDivContent = chatObj.chatDivContent;
   this.aktuelleSeite = chatObj.aktuelleSeite;
 }
@@ -118,7 +113,6 @@ function updateVars(id){
     chatDivHeader:chatDivHeader,
     chatSchliessen:chatSchliessen,
     chatZurueck:chatZurueck,
-    chatTestButton:chatTestButton,
     chatDivContent:chatDivContent,
     aktuelleSeite:aktuelleSeite
   };
@@ -139,6 +133,7 @@ function neueSeite(seiteNeu, id){
   }
 
   chatZurueck.style = "display: inline";
+  chatZurueck.style = "float: left";
 
   //Muss erneuert werden
   chatZurueck.addEventListener('click', () => {
@@ -148,12 +143,16 @@ function neueSeite(seiteNeu, id){
 
 
   switch (seiteNeu) {
-    case seiteLogin:
+    case SEITE_LOGIN:
       loginSeite();
       chatZurueck.style = "display: none";
       break;
 
-    case seiteAuswahl:
+    case SEITE_REGISTRIEREN:
+      registrierenSeite();
+      break;
+
+    case SEITE_AUSWAHL:
       auswahlSeite();
       break;
 
@@ -174,26 +173,38 @@ function neueSeite(seiteNeu, id){
   function loginSeite(){
     var loginForm =  document.createElement('form');
     loginForm.id = "loginForm";
-  
+
     var emailTitel = document.createElement('p');
     emailTitel.textContent = "Email";
   
     var emailInput = document.createElement('input');
     emailInput.type = "email";
-    emailInput.required = true;
-    emailInput.autofocus = true;
+    emailInput.setAttribute("required", true);
+    emailInput.setAttribute("autofocus", true);
   
     var passwortTitel = document.createElement('p');
     passwortTitel.textContent = "Passwort";
   
     var passwortInput = document.createElement('input');
     passwortInput.type = "password";
-    passwortInput.required = true;
+    passwortInput.setAttribute("required", true);
   
     var loginButton = document.createElement('button');
-    loginButton.type = "submit";
+    //loginButton.type = "submit";
     loginButton.textContent = "Login";
 
+    loginButton.addEventListener('click', () => {
+      //TODO AJAX-Request zum Webserver
+      //Login
+      neueSeite(SEITE_AUSWAHL, chatDiv.id);
+    });
+
+    var registrierButton = document.createElement('button');
+    registrierButton.textContent = "Neuer Account";
+
+    registrierButton.addEventListener('click', () => {
+      neueSeite(SEITE_REGISTRIEREN, chatDiv.id);
+    })
 
     chatDivContent.appendChild(emailTitel);
     chatDivContent.appendChild(emailInput);
@@ -205,15 +216,105 @@ function neueSeite(seiteNeu, id){
     chatDivContent.appendChild(document.createElement('br'));
     chatDivContent.appendChild(loginButton);
 
+    chatDivContent.appendChild(document.createElement('br'));
+    chatDivContent.appendChild(document.createElement('br'));
+    chatDivContent.appendChild(registrierButton);
+
+  }
+
+
+  function registrierenSeite(){
+    var loginForm =  document.createElement('form');
+    loginForm.id = "registrierForm";
+
+    var benutzernameTitel = document.createElement('p');
+    benutzernameTitel.textContent = "Benutzername";
+
+    var benutzernameInput = document.createElement('input');
+    benutzernameInput.type = "text";
+    benutzernameInput.setAttribute("required", true);
+    benutzernameInput.setAttribute("autofocus", true);
+  
+    var emailTitel = document.createElement('p');
+    emailTitel.textContent = "Email";
+  
+    var emailInput = document.createElement('input');
+    emailInput.type = "email";
+  
+    var passwortTitel = document.createElement('p');
+    passwortTitel.textContent = "Passwort";
+  
+    var passwortInput = document.createElement('input');
+    passwortInput.type = "password";
+    passwortInput.setAttribute("required", true);
+  
+    var registrierButton = document.createElement('button');
+    //registrierButton.type = "submit";
+    registrierButton.textContent = "Registrieren";
+
+    registrierButton.addEventListener('click', () => {
+      //TODO AJAX-Request zum Webserver
+      //Registrieren
+
+      neueSeite(SEITE_AUSWAHL, chatDiv.id);
+    });
+
+    
+    chatDivContent.appendChild(benutzernameTitel);
+    chatDivContent.appendChild(benutzernameInput);
+
+    chatDivContent.appendChild(emailTitel);
+    chatDivContent.appendChild(emailInput);
+  
+    chatDivContent.appendChild(passwortTitel);
+    chatDivContent.appendChild(passwortInput);
+
+    chatDivContent.appendChild(document.createElement('br'));
+    chatDivContent.appendChild(document.createElement('br'));
+    chatDivContent.appendChild(registrierButton);
+
   }
 
 
   function auswahlSeite(){
-    //TODO
-    var emailTitel = document.createElement('p');
-    emailTitel.textContent = "test";
+    var supportButton = document.createElement('button');
+    supportButton.textContent = "Support kontaktieren";
+    supportButton.addEventListener('click', () => {
+      neueSeite(SEITE_CHAT, chatDiv.id);
+    })
+
+    var versendenButton = document.createElement('button');
+    versendenButton.textContent = "Letzten Chat an Email senden";
+    versendenButton.addEventListener('click', () => {
+      //TODO AJEX-Request
+      //Chat verschicken
+      var emailVerschickt = true;
+
+      var infoVersendet = document.createElement('p');
+
+      if (emailVerschickt){  //Check ob Email versendet wurde
+        infoVersendet.textContent = "Email mit Chatverlauf wurde erfolgreich versendet!";
+        versendenButton.setAttribute("disabled", true);
+      }
+      else {
+        infoVersendet.textContent = "Es ist ein Fehler aufgetreten!";
+      }
+
+      chatDivContent.appendChild(infoVersendet);
+
+    })
     
-    chatDivContent.appendChild(emailTitel);
+    chatDivContent.appendChild(document.createElement('br'));
+    chatDivContent.appendChild(document.createElement('br'));
+    chatDivContent.appendChild(document.createElement('br'));
+    chatDivContent.appendChild(document.createElement('br'));
+
+    chatDivContent.appendChild(supportButton);
+
+    chatDivContent.appendChild(document.createElement('br'));
+    chatDivContent.appendChild(document.createElement('br'));
+
+    chatDivContent.appendChild(versendenButton);
   }
 }
 

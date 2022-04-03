@@ -1,6 +1,6 @@
 /**
  * @author Martin Düppenbecker
- * @since 27.03.22
+ * @since 03.04.22
  * 
  */
 
@@ -154,6 +154,10 @@ function neueSeite(seiteNeu, id){
 
     case SEITE_AUSWAHL:
       auswahlSeite();
+      break;
+
+    case SEITE_CHAT:
+      chatSeite();
       break;
 
     default:
@@ -315,6 +319,110 @@ function neueSeite(seiteNeu, id){
     chatDivContent.appendChild(document.createElement('br'));
 
     chatDivContent.appendChild(versendenButton);
+  }
+
+
+  function chatSeite(){
+    var chatTitel = document.createElement('h1');
+    chatTitel.textContent = "Tech Support"; //soll vom Server fetchen
+
+    var nachrichtenDiv = document.createElement('div');
+    nachrichtenDiv.className = "nachrichtenDiv";
+
+    
+    var nachrichtenFooterDiv = document.createElement('div');
+    nachrichtenFooterDiv.className = "nachrichtenFooterDiv";
+
+
+
+    var nachrichtenFooterTextfeld = document.createElement('input');
+    nachrichtenFooterTextfeld.setAttribute('id', 'textfeld');
+    nachrichtenFooterTextfeld.style = "width: 300px";
+
+
+    var nachrichtenFooterAbsendenButton = document.createElement('button');
+    nachrichtenFooterAbsendenButton.innerHTML = '<img src="icons/send.png" height=20 width=20>';
+    nachrichtenFooterAbsendenButton.style = "float: right";
+    nachrichtenFooterAbsendenButton.addEventListener('click', () => {
+      function nachrichtSpawnen(text, fremd){
+        var nachricht = document.createElement('div');
+        nachricht.innerText = text;
+
+        nachricht.style = "float: right; right-margin: 25px; left-margin: 100%; width: 280px; overflow-wrap: break-word";
+
+        if(fremd){
+          nachricht.style = "float: left; left-margin: 25px; right-margin: 100%; width: 280px; overflow-wrap: break-word";
+        }
+      
+
+        nachrichtenDiv.appendChild(nachricht);
+        nachrichtenDiv.appendChild(document.createElement('br'));
+        nachrichtenDiv.appendChild(document.createElement('br'));
+        nachrichtenDiv.appendChild(document.createElement('br'));
+      }
+      
+      nachrichtSpawnen(nachrichtenFooterTextfeld.value, false);
+
+      //TODO Absenden an Server
+
+      nachrichtenFooterTextfeld.value = "";
+    });
+
+
+    var nachrichtenFooterEmoji = document.createElement('select');
+    nachrichtenFooterEmoji.setAttribute('id', 'emojiAuswahl');
+    nachrichtenFooterEmoji.style = "float: left";
+    
+    var auswahl1 = document.createElement('option');
+    auswahl1.text = "😀";
+    auswahl1.addEventListener('click', () => {
+      nachrichtenFooterTextfeld.value += auswahl1.text;
+    });
+
+    var auswahl2 = document.createElement('option');
+    auswahl2.text = "😐";
+    auswahl2.addEventListener('click', () => {
+      nachrichtenFooterTextfeld.value += auswahl2.text;
+    });
+
+    var auswahl3 = document.createElement('option');
+    auswahl3.text = "🙁";
+    auswahl3.addEventListener('click', () => {
+      nachrichtenFooterTextfeld.value += auswahl3.text;
+    });
+
+    var auswahl4 = document.createElement('option');
+    auswahl4.text = "👍";
+    auswahl4.addEventListener('click', () => {
+      nachrichtenFooterTextfeld.value += auswahl4.text;
+    });
+
+    var auswahl5 = document.createElement('option');
+    auswahl5.text = "👎";
+    auswahl5.addEventListener('click', () => {
+      nachrichtenFooterTextfeld.value += auswahl5.text;
+    });
+
+
+
+    
+
+    nachrichtenFooterEmoji.add(auswahl1);
+    nachrichtenFooterEmoji.add(auswahl2);
+    nachrichtenFooterEmoji.add(auswahl3);
+    nachrichtenFooterEmoji.add(auswahl4);
+    nachrichtenFooterEmoji.add(auswahl5);
+
+
+    nachrichtenFooterDiv.appendChild(nachrichtenFooterEmoji);
+    nachrichtenFooterDiv.appendChild(nachrichtenFooterTextfeld);
+    nachrichtenFooterDiv.appendChild(nachrichtenFooterAbsendenButton);
+
+
+    chatDivContent.appendChild(chatTitel);
+    chatDivContent.appendChild(nachrichtenDiv);
+    chatDivContent.appendChild(nachrichtenFooterDiv);
+
   }
 }
 

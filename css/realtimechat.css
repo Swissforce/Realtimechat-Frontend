@@ -1,28 +1,33 @@
 #chatButton {
-    position: absolute;
-    top: 88%;
-    left: 93%;
+  position: absolute;
+  top: 88%;
+  left: 93%;
 }
 
 .chatDiv {
-    position: absolute;
-    z-index: 0;
-    background-color: #f1f1f1;
-    text-align: center;
-    border: 1px solid #d3d3d3;
-    top: 45%;
-    left: 62%;
-    min-width: 35%;
-    min-height: 50%;
-}
-
-.chatDivHeader {
+  position: absolute;
+  z-index: 0;
+  background-color: #f1f1f1;
+  text-align: center;
+  border: 1px solid #d3d3d3;
+  top: 45%;
+  left: 62%;
+  min-width: 35%;
+  min-height: 50%;
+  }
+  
+  .chatDivHeader {
     padding: 10px;
     cursor: move;
     z-index: 1;
     background-color: #2196F3;
     color: #fff;
-}
-.chatSchliessen {
-    float: right;
+  }
+    .chatSchliessen {
+      float: right;
+    }
+
+.nachrichtenDiv {
+  height: 250px;
+  overflow: auto;
 }

@@ -1,6 +1,6 @@
 /**
  * @author Martin Düppenbecker
- * @since 03.04.22
+ * @since 04.04.22
  * 
  */
 
@@ -328,6 +328,15 @@ function neueSeite(seiteNeu, id){
 
     var nachrichtenDiv = document.createElement('div');
     nachrichtenDiv.className = "nachrichtenDiv";
+    
+
+    var nachrichtenDivLinks = document.createElement('div');
+    nachrichtenDivLinks.className = "nachrichtenDivLinks";
+    nachrichtenDivLinks.style = "display: flex; flex-direction: column; width: 280px"
+
+    var nachrichtenDivRechts = document.createElement('div');
+    nachrichtenDivRechts.className = "nachrichtenDivRechts";
+    nachrichtenDivRechts.style = "display: flex; flex-direction: column; width: 280px"
 
     
     var nachrichtenFooterDiv = document.createElement('div');
@@ -335,30 +344,33 @@ function neueSeite(seiteNeu, id){
 
 
 
-    var nachrichtenFooterTextfeld = document.createElement('input');
-    nachrichtenFooterTextfeld.setAttribute('id', 'textfeld');
-    nachrichtenFooterTextfeld.style = "width: 300px";
+    var nachrichtenFooterTextfeld = document.createElement('textarea');
+    nachrichtenFooterTextfeld.setAttribute('id', 'textarea');
+    nachrichtenFooterTextfeld.style = "width: 300px; height: 25px";
 
 
     var nachrichtenFooterAbsendenButton = document.createElement('button');
-    nachrichtenFooterAbsendenButton.innerHTML = '<img src="icons/send.png" height=20 width=20>';
+    nachrichtenFooterAbsendenButton.innerHTML = '<img src="icons/send.png" height=25 width=25>';
     nachrichtenFooterAbsendenButton.style = "float: right";
     nachrichtenFooterAbsendenButton.addEventListener('click', () => {
       function nachrichtSpawnen(text, fremd){
         var nachricht = document.createElement('div');
         nachricht.innerText = text;
+        nachricht.style = "";
 
-        nachricht.style = "float: right; right-margin: 25px; left-margin: 100%; width: 280px; overflow-wrap: break-word";
+        
 
         if(fremd){
-          nachricht.style = "float: left; left-margin: 25px; right-margin: 100%; width: 280px; overflow-wrap: break-word";
+          nachricht.style = "float: left; padding: 10px 10px 10px 10px; text-align: left; width: 280px; overflow-wrap: break-word";
+          nachrichtenDivLinks.appendChild(nachricht);
+        }
+        else {
+          nachricht.style = "float: right; padding: 10px 10px 10px 10px; text-align: right; width: 280px; overflow-wrap: break-word";
+          nachrichtenDivRechts.appendChild(nachricht);
         }
       
 
-        nachrichtenDiv.appendChild(nachricht);
-        nachrichtenDiv.appendChild(document.createElement('br'));
-        nachrichtenDiv.appendChild(document.createElement('br'));
-        nachrichtenDiv.appendChild(document.createElement('br'));
+        
       }
       
       nachrichtSpawnen(nachrichtenFooterTextfeld.value, false);
@@ -371,7 +383,7 @@ function neueSeite(seiteNeu, id){
 
     var nachrichtenFooterEmoji = document.createElement('select');
     nachrichtenFooterEmoji.setAttribute('id', 'emojiAuswahl');
-    nachrichtenFooterEmoji.style = "float: left";
+    nachrichtenFooterEmoji.style = "float: left; height: 25px";
     
     var auswahl1 = document.createElement('option');
     auswahl1.text = "😀";
@@ -418,6 +430,8 @@ function neueSeite(seiteNeu, id){
     nachrichtenFooterDiv.appendChild(nachrichtenFooterTextfeld);
     nachrichtenFooterDiv.appendChild(nachrichtenFooterAbsendenButton);
 
+    nachrichtenDiv.appendChild(nachrichtenDivLinks);
+    nachrichtenDiv.appendChild(nachrichtenDivRechts);
 
     chatDivContent.appendChild(chatTitel);
     chatDivContent.appendChild(nachrichtenDiv);

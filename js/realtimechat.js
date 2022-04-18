@@ -1,12 +1,12 @@
 /**
  * @author Martin Düppenbecker
- * @since 04.04.22
+ * @since 18.04.22
  * 
  */
 
 //Festsetzung der benutzerdefinierten Konstanten
 
-const CHATSERVER = "127.0.0.1";
+const CHATSERVER = "https://realtime-chat-idpa.herokuapp.com/";
 
 
 //Festsetzung anderer Konstanten & Variablen
@@ -26,6 +26,7 @@ var chatZurueck;
 //Map mit allen Chats. So kann man sehen, welchem Chat was gehört
 var chatMap = new Map(); 
 
+var eingeloggt = false;
 
 
 //Funktionen
@@ -70,9 +71,6 @@ function spawnChat(){
   chatDivContent = document.createElement('div');
   chatDivContent.className = "chatDivContent";
 
-  aktuelleSeite = SEITE_LOGIN;
-
-
   chatDivHeader.appendChild(chatSchliessen);
   chatDivHeader.appendChild(chatZurueck);
   chatDiv.appendChild(chatDivHeader);
@@ -80,11 +78,15 @@ function spawnChat(){
 
   document.body.appendChild(chatDiv);
 
+  aktuelleSeite = SEITE_LOGIN;
+
+  if(eingeloggt){
+    aktuelleSeite = SEITE_AUSWAHL;
+  }
 
   updateVars(anzGespawnterChats);
 
-
-  neueSeite(SEITE_LOGIN, anzGespawnterChats);
+  neueSeite(aktuelleSeite, anzGespawnterChats);
 
   addDragElement(chatDiv);
 
@@ -141,7 +143,6 @@ function neueSeite(seiteNeu, id){
   });
   
 
-
   switch (seiteNeu) {
     case SEITE_LOGIN:
       loginSeite();
@@ -183,6 +184,7 @@ function neueSeite(seiteNeu, id){
   
     var emailInput = document.createElement('input');
     emailInput.type = "email";
+    emailInput.setAttribute("id", "email");
     emailInput.setAttribute("required", true);
     emailInput.setAttribute("autofocus", true);
   
@@ -191,6 +193,7 @@ function neueSeite(seiteNeu, id){
   
     var passwortInput = document.createElement('input');
     passwortInput.type = "password";
+    passwortInput.setAttribute("id", "password");
     passwortInput.setAttribute("required", true);
   
     var loginButton = document.createElement('button');
@@ -198,9 +201,21 @@ function neueSeite(seiteNeu, id){
     loginButton.textContent = "Login";
 
     loginButton.addEventListener('click', () => {
-      //TODO AJAX-Request zum Webserver
-      //Login
-      neueSeite(SEITE_AUSWAHL, chatDiv.id);
+      logIn(document.getElementById("email").value, document.getElementById("password").value)
+      .then(test);
+      
+      function test(){
+        if(eingeloggt){
+          neueSeite(SEITE_AUSWAHL, chatDiv.id);
+        }
+        else {
+          //Löscht die Inputs
+          //document.getElementById("email").value = "";
+          document.getElementById("password").value = "";
+          console.log("Falsches Login")     //TODO GUI-Meldung erstellen
+        }
+      }
+
     });
 
     var registrierButton = document.createElement('button');
@@ -276,6 +291,32 @@ function neueSeite(seiteNeu, id){
     chatDivContent.appendChild(document.createElement('br'));
     chatDivContent.appendChild(document.createElement('br'));
     chatDivContent.appendChild(registrierButton);
+
+  }
+
+  // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
+  async function logIn(emailP, passwordP){
+    var data = new URLSearchParams({
+      'email': emailP,
+      'password': passwordP
+    });
+
+    let response = await fetch(CHATSERVER + 'LogIn.php', {
+      method: 'POST',
+      body: data
+    })
+
+    //console.log(response.json());
+
+    //let result = await response.json;
+    if (response.ok){
+      eingeloggt = true;
+      return true;
+    }
+    else {
+      return false;
+    }
+
 
   }
 
@@ -551,5 +592,3 @@ function showChatButton(){
 showChatButton();
 
 addAllDragElements(document.getElementsByClassName("chatDiv"));
-
-

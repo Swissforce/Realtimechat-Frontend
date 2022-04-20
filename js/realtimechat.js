@@ -1,6 +1,6 @@
 /**
  * @author Martin Düppenbecker
- * @since 18.04.22
+ * @since 20.04.22
  * 
  */
 
@@ -80,10 +80,6 @@ function spawnChat(){
 
   aktuelleSeite = SEITE_LOGIN;
 
-  if(eingeloggt){
-    aktuelleSeite = SEITE_AUSWAHL;
-  }
-
   updateVars(anzGespawnterChats);
 
   neueSeite(aktuelleSeite, anzGespawnterChats);
@@ -141,6 +137,11 @@ function neueSeite(seiteNeu, id){
   chatZurueck.addEventListener('click', () => {
     neueSeite(aktuelleSeite, chatDiv.id);
   });
+
+
+  if (eingeloggt && seiteNeu == SEITE_LOGIN){
+    seiteNeu = SEITE_AUSWAHL;
+  }
   
 
   switch (seiteNeu) {
@@ -202,20 +203,7 @@ function neueSeite(seiteNeu, id){
 
     loginButton.addEventListener('click', () => {
       logIn(document.getElementById("email").value, document.getElementById("password").value)
-      .then(test);
-      
-      function test(){
-        if(eingeloggt){
-          neueSeite(SEITE_AUSWAHL, chatDiv.id);
-        }
-        else {
-          //Löscht die Inputs
-          //document.getElementById("email").value = "";
-          document.getElementById("password").value = "";
-          console.log("Falsches Login")     //TODO GUI-Meldung erstellen
-        }
-      }
-
+      .then(nachLogInFunktion);
     });
 
     var registrierButton = document.createElement('button');
@@ -251,6 +239,7 @@ function neueSeite(seiteNeu, id){
 
     var benutzernameInput = document.createElement('input');
     benutzernameInput.type = "text";
+    benutzernameInput.setAttribute("id", "username");
     benutzernameInput.setAttribute("required", true);
     benutzernameInput.setAttribute("autofocus", true);
   
@@ -259,12 +248,14 @@ function neueSeite(seiteNeu, id){
   
     var emailInput = document.createElement('input');
     emailInput.type = "email";
+    emailInput.setAttribute("id", "email");
   
     var passwortTitel = document.createElement('p');
     passwortTitel.textContent = "Passwort";
   
     var passwortInput = document.createElement('input');
     passwortInput.type = "password";
+    passwortInput.setAttribute("id", "password");
     passwortInput.setAttribute("required", true);
   
     var registrierButton = document.createElement('button');
@@ -272,10 +263,7 @@ function neueSeite(seiteNeu, id){
     registrierButton.textContent = "Registrieren";
 
     registrierButton.addEventListener('click', () => {
-      //TODO AJAX-Request zum Webserver
-      //Registrieren
-
-      neueSeite(SEITE_AUSWAHL, chatDiv.id);
+     register(document.getElementById("email").value, document.getElementById("username").value, document.getElementById("password").value);
     });
 
     
@@ -301,14 +289,13 @@ function neueSeite(seiteNeu, id){
       'password': passwordP
     });
 
+    disEnableAll();
     let response = await fetch(CHATSERVER + 'LogIn.php', {
       method: 'POST',
       body: data
     })
+    disEnableAll();
 
-    //console.log(response.json());
-
-    //let result = await response.json;
     if (response.ok){
       eingeloggt = true;
       return true;
@@ -316,9 +303,56 @@ function neueSeite(seiteNeu, id){
     else {
       return false;
     }
-
-
   }
+
+  function nachLogInFunktion(){
+    if(eingeloggt){
+      neueSeite(SEITE_AUSWAHL, chatDiv.id);
+    }
+    else {
+      document.getElementById("password").value = "";
+      console.log("Falsches Login")     //TODO GUI-Meldung erstellen
+    }
+  }
+
+  async function register(emailP, usernameP, passwordP){
+    var data = new URLSearchParams({
+      'email': emailP,
+      'username': usernameP,
+      'password': passwordP,
+      'role_id': 1
+    });
+
+    disEnableAll();
+    let response = await fetch(CHATSERVER + 'Register.php', {
+      method: 'POST',
+      body: data
+    })
+    disEnableAll();
+
+    if (response.ok){
+      logIn(emailP, passwordP)
+      .then(nachLogInFunktion);
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
+
+  function disEnableAll(){
+    var disableBool = false;
+    var allChildNodes = chatDivContent.getElementsByTagName('*');
+
+    if(!allChildNodes[0].disabled){
+      disableBool = true;
+    }
+    for(var i = 0; i < allChildNodes.length; i++)
+      {
+        allChildNodes[i].disabled = disableBool;
+      }
+  }
+  
 
 
   function auswahlSeite(){
@@ -365,7 +399,7 @@ function neueSeite(seiteNeu, id){
 
   function chatSeite(){
     var chatTitel = document.createElement('h1');
-    chatTitel.textContent = "Tech Support"; //soll vom Server fetchen
+    chatTitel.textContent = "Tech Support"; //TODO soll vom Server fetchen
 
     var nachrichtenDiv = document.createElement('div');
     nachrichtenDiv.className = "nachrichtenDiv";

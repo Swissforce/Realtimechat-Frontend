@@ -553,7 +553,28 @@ function destroyChat(id){
   document.body.removeChild(document.getElementById(id));
   chatMap.delete(Number(id));
   //TODO AJAX LogOff
+  logOff();
   showChatButton();
+}
+
+async function logOff(){
+  //TODO soll eigentlich ohne Parameter auskommen (Die Email soll Serverseitig genommen werden)
+  var data = new URLSearchParams({
+    'email': eingeloggteEmail
+  });
+
+  let response = await fetch(CHATSERVER + 'LogOff.php', {
+    method: 'POST',
+    body: data
+  })
+
+  if (response.ok){
+    return true;
+  }
+
+  else {
+    return false;
+  }
 }
 
 /**

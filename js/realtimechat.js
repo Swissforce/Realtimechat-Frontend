@@ -1,6 +1,6 @@
 /**
  * @author Martin Düppenbecker
- * @since 20.04.22
+ * @since 25.04.22
  * 
  */
 
@@ -23,10 +23,13 @@ var chatDivHeader;
 var chatDivContent;
 var chatSchliessen;
 var chatZurueck;
+
+var chatId;
 //Map mit allen Chats. So kann man sehen, welchem Chat was gehört
 var chatMap = new Map(); 
 
 var eingeloggt = false;
+var eingeloggteEmail;
 
 
 //Funktionen
@@ -100,6 +103,7 @@ function loadVars(id){
   this.chatZurueck = chatObj.chatZurueck;
   this.chatDivContent = chatObj.chatDivContent;
   this.aktuelleSeite = chatObj.aktuelleSeite;
+  this.chatId = chatObj.chatId;
 }
 
 /**
@@ -112,7 +116,8 @@ function updateVars(id){
     chatSchliessen:chatSchliessen,
     chatZurueck:chatZurueck,
     chatDivContent:chatDivContent,
-    aktuelleSeite:aktuelleSeite
+    aktuelleSeite:aktuelleSeite,
+    chatId:chatId
   };
 
   chatMap.set(id, chatObj);
@@ -298,6 +303,7 @@ function neueSeite(seiteNeu, id){
 
     if (response.ok){
       eingeloggt = true;
+      eingeloggteEmail = emailP;
       return true;
     }
     else {
@@ -340,6 +346,7 @@ function neueSeite(seiteNeu, id){
     }
   }
 
+  https://stackoverflow.com/questions/15523396/how-to-disable-whole-div-contents-without-using-jquery
   function disEnableAll(){
     var disableBool = false;
     var allChildNodes = chatDivContent.getElementsByTagName('*');
@@ -354,12 +361,11 @@ function neueSeite(seiteNeu, id){
   }
   
 
-
   function auswahlSeite(){
     var supportButton = document.createElement('button');
     supportButton.textContent = "Support kontaktieren";
     supportButton.addEventListener('click', () => {
-      neueSeite(SEITE_CHAT, chatDiv.id);
+      createChat();
     })
 
     var versendenButton = document.createElement('button');
@@ -396,6 +402,31 @@ function neueSeite(seiteNeu, id){
     chatDivContent.appendChild(versendenButton);
   }
 
+  async function createChat(){
+    //TODO soll eigentlich ohne Parameter auskommen (Die Email soll Serverseitig genommen werden)
+    var data = new URLSearchParams({
+      'email': eingeloggteEmail
+    });
+
+    disEnableAll();
+    let response = await fetch(CHATSERVER + 'CreateChat.php', {
+      method: 'POST',
+      body: data
+    })
+    disEnableAll();
+
+    if (response.ok){
+      neueSeite(SEITE_CHAT, chatDiv.id);
+      return true;
+    }
+
+    else {
+      if (response.status == 503){
+        alert("Es sind momentan keine TechSupports verfügbar. Bitte probieren Sie es später wieder");
+      }
+      return false;
+    }
+  }
 
   function chatSeite(){
     var chatTitel = document.createElement('h1');
@@ -521,6 +552,7 @@ function neueSeite(seiteNeu, id){
 function destroyChat(id){
   document.body.removeChild(document.getElementById(id));
   chatMap.delete(Number(id));
+  //TODO AJAX LogOff
   showChatButton();
 }
 

@@ -1,6 +1,6 @@
 /**
  * @author Martin Düppenbecker
- * @since 25.04.22
+ * @since 26.04.22
  * 
  */
 
@@ -24,9 +24,10 @@ var chatDivContent;
 var chatSchliessen;
 var chatZurueck;
 
-var chatId;
+var chatNr;
 //Map mit allen Chats. So kann man sehen, welchem Chat was gehört
 var chatMap = new Map(); 
+var chatNrToId = new Map();
 
 var eingeloggt = false;
 var eingeloggteEmail;
@@ -103,7 +104,7 @@ function loadVars(id){
   this.chatZurueck = chatObj.chatZurueck;
   this.chatDivContent = chatObj.chatDivContent;
   this.aktuelleSeite = chatObj.aktuelleSeite;
-  this.chatId = chatObj.chatId;
+  this.chatNr = chatObj.chatNr;
 }
 
 /**
@@ -117,7 +118,7 @@ function updateVars(id){
     chatZurueck:chatZurueck,
     chatDivContent:chatDivContent,
     aktuelleSeite:aktuelleSeite,
-    chatId:chatId
+    chatNr:chatNr
   };
 
   chatMap.set(id, chatObj);
@@ -289,6 +290,10 @@ function neueSeite(seiteNeu, id){
 
   // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
   async function logIn(emailP, passwordP){
+    if (!(emailP && passwordP)){
+      alert("Bitte füllen Sie alle Felder aus");
+      return false;
+    }
     var data = new URLSearchParams({
       'email': emailP,
       'password': passwordP
@@ -298,7 +303,7 @@ function neueSeite(seiteNeu, id){
     let response = await fetch(CHATSERVER + 'LogIn.php', {
       method: 'POST',
       body: data
-    })
+    });
     disEnableAll();
 
     if (response.ok){
@@ -307,6 +312,12 @@ function neueSeite(seiteNeu, id){
       return true;
     }
     else {
+      if (response.status == 401){
+        alert("Das Login ist inkorrekt");
+      }
+      else {
+        alert("Ein Fehler ist aufgetreten");
+      }
       return false;
     }
   }
@@ -317,16 +328,18 @@ function neueSeite(seiteNeu, id){
     }
     else {
       document.getElementById("password").value = "";
-      console.log("Falsches Login")     //TODO GUI-Meldung erstellen
     }
   }
 
   async function register(emailP, usernameP, passwordP){
+    if (!(emailP && usernameP && passwordP)){
+      alert("Bitte füllen Sie alle Felder aus");
+      return false;
+    }
     var data = new URLSearchParams({
       'email': emailP,
       'username': usernameP,
-      'password': passwordP,
-      'role_id': 1
+      'password': passwordP
     });
 
     disEnableAll();
@@ -342,6 +355,13 @@ function neueSeite(seiteNeu, id){
       return true;
     }
     else {
+      if (response.status == 401){
+        alert("Diese Email ist inkorrekt oder wird bereits verwendet");
+        neueSeite(aktuelleSeite, chatDiv.id); //Ladet die Seite neu, damit die Inputs leer sind
+      }
+      else {
+        alert("Ein Fehler ist aufgetreten");
+      }
       return false;
     }
   }
@@ -423,6 +443,9 @@ function neueSeite(seiteNeu, id){
     else {
       if (response.status == 503){
         alert("Es sind momentan keine TechSupports verfügbar. Bitte probieren Sie es später wieder");
+      }
+      else {
+        alert("Ein Fehler ist aufgetreten");
       }
       return false;
     }
@@ -546,35 +569,66 @@ function neueSeite(seiteNeu, id){
   }
 }
 
+
+async function getAllOpenChatsFromUser(){
+  while (eingeloggt){
+    let response = await fetch(CHATSERVER + 'GetAllOpenChatsFromUser.php', {
+      method: 'POST'
+    });
+  
+    response.json();
+  }
+
+}
+
 /**
  * Entfernt ein Chat-Fenster mit bestimmter id
  */
 function destroyChat(id){
   document.body.removeChild(document.getElementById(id));
   chatMap.delete(Number(id));
-  //TODO AJAX LogOff
-  logOff();
+  endChat(id);
   showChatButton();
+}
+
+async function endChat(idNr){
+  let chatId = chatNrToId.get(Number(idNr));
+  if (chatId){
+    var data = new URLSearchParams({
+      'chat_id': chatId
+    });
+  
+    let response = await fetch(CHATSERVER + 'LogOff.php', {
+      method: 'PUT',
+      body: data
+    });
+  
+    if (response.ok){
+      return true;
+    }
+  }
+  return false;
 }
 
 async function logOff(){
   //TODO soll eigentlich ohne Parameter auskommen (Die Email soll Serverseitig genommen werden)
-  var data = new URLSearchParams({
-    'email': eingeloggteEmail
-  });
-
-  let response = await fetch(CHATSERVER + 'LogOff.php', {
-    method: 'POST',
-    body: data
-  })
-
-  if (response.ok){
-    return true;
+  if (eingeloggteEmail){
+    var data = new URLSearchParams({
+      'email': eingeloggteEmail
+    });
+  
+    let response = await fetch(CHATSERVER + 'LogOff.php', {
+      method: 'POST',
+      body: data
+    })
+  
+    if (response.ok){
+      eingeloggt = false;
+      return true;
+    }
+  
   }
-
-  else {
-    return false;
-  }
+  return false;
 }
 
 /**
@@ -660,7 +714,8 @@ function showChatButton(){
   
     document.body.appendChild(chatButton);
   }
-  else if (chatMap === undefined || chatMap.size == 0) {
+  else if (chatMap === undefined || chatMap.size == 0) {  //Wenn alle Fenster geschlossen sind
+    logOff();
     chatButton.style = "display: inline";
   }
 
@@ -679,3 +734,5 @@ function showChatButton(){
 showChatButton();
 
 addAllDragElements(document.getElementsByClassName("chatDiv"));
+
+

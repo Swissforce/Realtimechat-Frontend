@@ -659,7 +659,7 @@ function neueSeite(seiteNeu, id){
     return false;
   }
 
-  var idsNichtbenutzt = null;
+
   async function getAllOpenChatsFromUser(){
     while (eingeloggt){
       var chat_ids;
@@ -679,13 +679,15 @@ function neueSeite(seiteNeu, id){
           chatNrToId.set(chatDiv.id, chat_ids[i]);
         }
         else {
-          console.log(nrVonId);
-          loadVars(Number(nrVonId));
+          try{ //wenn chat von Client geschlossen wird, dann sind die chat_ids noch nicht geupdated
+            loadVars(Number(nrVonId));
+          }
+          catch(error){
+            console.log("catch: " + nrVonId)
+          }
         }
         getMessages();
       }
-
-      //break;
 
       
 
@@ -703,7 +705,6 @@ function neueSeite(seiteNeu, id){
   }
 
   function valueInMap(value){
-    //var iterator = chatNrToId.values();
     for (var iterator of chatNrToId){
       console.log(iterator);
       if (iterator[1] == value){
@@ -731,12 +732,13 @@ function neueSeite(seiteNeu, id){
 function destroyChat(id){
   document.body.removeChild(document.getElementById(id));
   chatMap.delete(Number(id));
+  chatNrToId.delete(id);
   endChat(id);
   showChatButton();
 }
 
 async function endChat(idNr, richtigeIdBoolean){
-  let chatId = chatNrToId.get(Number(idNr));
+  let chatId = chatNrToId.get(idNr);
   if (richtigeIdBoolean){
     chatId = idNr;
   } 

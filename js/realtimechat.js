@@ -154,13 +154,19 @@ function neueSeite(seiteNeu, id){
     chatDivContent.removeChild(chatDivContent.lastChild);
   }
 
-  chatZurueck.style = "display: inline";
-  chatZurueck.style = "float: left";
-
-  //Muss erneuert werden
-  chatZurueck.addEventListener('click', () => {
-    neueSeite(aktuelleSeite, chatDiv.id);
-  });
+  //man soll nicht aus Chat herausgehen können
+  if (seiteNeu != SEITE_CHAT){
+    chatZurueck.style = "display: inline";
+    chatZurueck.style = "float: left";
+  
+    //Muss erneuert werden
+    chatZurueck.addEventListener('click', () => {
+      neueSeite(aktuelleSeite, chatDiv.id);
+    });
+  }
+  else {
+    chatZurueck.style = "display: none";
+  }
 
 
   if (eingeloggt && seiteNeu == SEITE_LOGIN){
@@ -409,9 +415,7 @@ function neueSeite(seiteNeu, id){
     var versendenButton = document.createElement('button');
     versendenButton.textContent = "Letzten Chat an Email senden";
     versendenButton.addEventListener('click', () => {
-      //TODO AJEX-Request
-      //Chat verschicken
-      var emailVerschickt = true;
+      var emailVerschickt = sendEmail();
 
       var infoVersendet = document.createElement('p');
 
@@ -467,6 +471,36 @@ function neueSeite(seiteNeu, id){
       else {
         alert("Ein Fehler ist aufgetreten");
       }
+      return false;
+    }
+  }
+
+  async function sendEmail(chat_id){
+    let response;
+
+    if (chat_id){
+      var data = new URLSearchParams({
+        'chat_id': chat_id
+      });
+
+      response = await fetch(CHATSERVER + 'SendEmail.php', {
+        method: 'POST',
+        credentials: "include",
+        body: data
+      });
+    }
+
+    else {
+      response = await fetch(CHATSERVER + 'SendEmail.php', {
+        method: 'POST',
+        credentials: "include"
+      });
+    }
+
+    if (response.ok){
+      return true;
+    }
+    else {
       return false;
     }
   }
@@ -575,22 +609,31 @@ function neueSeite(seiteNeu, id){
     var nachricht = document.createElement('div');
     nachricht.innerText = text;
     nachricht.style = "";
-
+  
+    var unsichtbarNachricht = document.createElement('div');
+    unsichtbarNachricht.innerText = text;
+    unsichtbarNachricht.style = "";
     
-
+  
     if(fremd){
-      nachricht.style = "float: left; padding: 10px 10px 10px 10px; text-align: left; width: 280px; overflow-wrap: break-word";
+      nachricht.style = "float: left; padding: 10px 10px 10px 10px; text-align: left; max-width: 270px; overflow-wrap: break-word";
       nachrichtenDivLinks.appendChild(nachricht);
+  
+      unsichtbarNachricht.style = "float: left; padding: 10px 10px 10px 10px; text-align: left; max-width: 270px; overflow-wrap: break-word; visibility: hidden";
+      nachrichtenDivRechts.appendChild(unsichtbarNachricht);
     }
     else {
-      nachricht.style = "float: right; padding: 10px 10px 10px 10px; text-align: right; width: 280px; overflow-wrap: break-word";
+      nachricht.style = "float: right; padding: 10px 10px 10px 10px; text-align: right; max-width: 270px; overflow-wrap: break-word";
       nachrichtenDivRechts.appendChild(nachricht);
+  
+      unsichtbarNachricht.style = "float: right; padding: 10px 10px 10px 10px; text-align: right; max-width: 270px; overflow-wrap: break-word; visibility: hidden";
+      nachrichtenDivLinks.appendChild(unsichtbarNachricht);
     }
   
-
+  
     
   }
-
+  
   async function nachrichtSenden(text){
     var data = new URLSearchParams({
       'content': text,
@@ -609,7 +652,6 @@ function neueSeite(seiteNeu, id){
     }
     return false;
   }
-
 
   async function getMessages(){
     var nachrichten;
@@ -642,18 +684,6 @@ function neueSeite(seiteNeu, id){
           nachrichtSpawnen(nachrichten[nachrichtId].content, true);
         }
       }
-      /*  PSEUDOCODE  
-      nachrichtenDivLinks.clear()
-      nachrichtenDivRechts.clear()
-      for (mes in messages){
-        if (mes.nichtMeine){
-          nachrichtSpawnen(mes.text, true)
-        }
-        else {
-          nachrichtSpawnen(mes.text, false)
-        }
-      }
-      */
       return true;
     }
     return false;
@@ -761,10 +791,18 @@ function neueSeite(seiteNeu, id){
 
 
 
+
+
 /**
  * Entfernt ein Chat-Fenster mit bestimmter id
  */
 function destroyChat(id){
+  if (aktuelleSeite == SEITE_CHAT){
+    //https://www.w3schools.com/js/js_popup.asp
+    if (confirm("Wollen Sie den Chatverlauf per Email versenden?")){
+      sendEmail(chatNrToId.get(id));
+    }
+  }
   document.body.removeChild(document.getElementById(id));
   chatMap.delete(Number(id));
   //chatNrToId.delete(id);

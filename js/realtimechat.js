@@ -659,7 +659,7 @@ function neueSeite(seiteNeu, id){
     return false;
   }
 
-
+  var letzte_chat_ids = null;
   async function getAllOpenChatsFromUser(){
     while (eingeloggt){
       var chat_ids;
@@ -670,6 +670,37 @@ function neueSeite(seiteNeu, id){
       .then(response=>response.json())
       .then(data=>{ chat_ids = data.chat_id });
 
+
+      
+      if (letzte_chat_ids != null) {  //sucht nach geschlossenen Chats
+        if (letzte_chat_ids != chat_ids){
+          function valueInChatIds(value){
+            for (var j = 0; i < chat_ids.length; j++){
+              if(chat_ids[j] == value){
+                return chat_ids[j];
+              }
+            }
+            return null;
+          }
+
+          for (var i = 0; i < letzte_chat_ids.length; i++){
+            if (valueInChatIds(letzte_chat_ids[i]) == null){
+              try{
+                loadVars(Number(valueInMap(letzte_chat_ids[i])));
+                disEnableAll();
+
+                var chatFertig = document.createElement('p');
+                chatFertig.textContent = "Chat wurde beendet!";
+                chatDivContent.appendChild(chatFertig);
+
+                updateVars(Number(valueInMap(letzte_chat_ids[i])));
+              }
+              catch(error){}
+            }
+          }
+        }
+      }
+      
      
       for (var i = 0; i < chat_ids.length; i++){
         var nrVonId = valueInMap(chat_ids[i]);
@@ -689,6 +720,10 @@ function neueSeite(seiteNeu, id){
         getMessages();
       }
 
+      letzte_chat_ids = chat_ids;
+
+      //break;
+
       
 
       /*  PSEUDOCODE
@@ -704,10 +739,10 @@ function neueSeite(seiteNeu, id){
     }
   }
 
-  function valueInMap(value){
+  function valueInMap(idValue){
     for (var iterator of chatNrToId){
       console.log(iterator);
-      if (iterator[1] == value){
+      if (iterator[1] == idValue){
         return iterator[0];
       }
     }
@@ -732,7 +767,7 @@ function neueSeite(seiteNeu, id){
 function destroyChat(id){
   document.body.removeChild(document.getElementById(id));
   chatMap.delete(Number(id));
-  chatNrToId.delete(id);
+  //chatNrToId.delete(id);
   endChat(id);
   showChatButton();
 }

@@ -1,6 +1,6 @@
 /**
  * @author Martin Düppenbecker
- * @since 26.04.22
+ * @since 27.04.22
  * 
  */
 
@@ -23,6 +23,9 @@ var chatDivHeader;
 var chatDivContent;
 var chatSchliessen;
 var chatZurueck;
+
+var nachrichtenDivLinks;
+var nachrichtenDivRechts;
 
 var chatNr;
 //Map mit allen Chats. So kann man sehen, welchem Chat was gehört
@@ -105,6 +108,8 @@ function loadVars(id){
   this.chatDivContent = chatObj.chatDivContent;
   this.aktuelleSeite = chatObj.aktuelleSeite;
   this.chatNr = chatObj.chatNr;
+  this.nachrichtenDivLinks = chatObj.nachrichtenDivLinks;
+  this.nachrichtenDivRechts = chatObj.nachrichtenDivRechts;
 }
 
 /**
@@ -118,7 +123,9 @@ function updateVars(id){
     chatZurueck:chatZurueck,
     chatDivContent:chatDivContent,
     aktuelleSeite:aktuelleSeite,
-    chatNr:chatNr
+    chatNr:chatNr,
+    nachrichtenDivLinks:nachrichtenDivLinks,
+    nachrichtenDivRechts:nachrichtenDivRechts
   };
 
   chatMap.set(id, chatObj);
@@ -302,6 +309,7 @@ function neueSeite(seiteNeu, id){
     disEnableAll();
     let response = await fetch(CHATSERVER + 'LogIn.php', {
       method: 'POST',
+      credentials: "include",
       body: data
     });
     disEnableAll();
@@ -314,6 +322,7 @@ function neueSeite(seiteNeu, id){
     else {
       if (response.status == 401){
         alert("Das Login ist inkorrekt");
+        document.getElementById("password").value = "";
       }
       else {
         alert("Ein Fehler ist aufgetreten");
@@ -325,9 +334,7 @@ function neueSeite(seiteNeu, id){
   function nachLogInFunktion(){
     if(eingeloggt){
       neueSeite(SEITE_AUSWAHL, chatDiv.id);
-    }
-    else {
-      document.getElementById("password").value = "";
+      getAllOpenChatsFromUser();
     }
   }
 
@@ -345,6 +352,7 @@ function neueSeite(seiteNeu, id){
     disEnableAll();
     let response = await fetch(CHATSERVER + 'Register.php', {
       method: 'POST',
+      credentials: "include",
       body: data
     })
     disEnableAll();
@@ -357,7 +365,6 @@ function neueSeite(seiteNeu, id){
     else {
       if (response.status == 401){
         alert("Diese Email ist inkorrekt oder wird bereits verwendet");
-        neueSeite(aktuelleSeite, chatDiv.id); //Ladet die Seite neu, damit die Inputs leer sind
       }
       else {
         alert("Ein Fehler ist aufgetreten");
@@ -431,11 +438,13 @@ function neueSeite(seiteNeu, id){
     disEnableAll();
     let response = await fetch(CHATSERVER + 'CreateChat.php', {
       method: 'POST',
+      credentials: "include",
       body: data
     })
     disEnableAll();
 
     if (response.ok){
+      chatNrToId.set(chatDiv.id, response.text);
       neueSeite(SEITE_CHAT, chatDiv.id);
       return true;
     }
@@ -459,11 +468,11 @@ function neueSeite(seiteNeu, id){
     nachrichtenDiv.className = "nachrichtenDiv";
     
 
-    var nachrichtenDivLinks = document.createElement('div');
+    nachrichtenDivLinks = document.createElement('div');
     nachrichtenDivLinks.className = "nachrichtenDivLinks";
     nachrichtenDivLinks.style = "display: flex; flex-direction: column; width: 280px"
 
-    var nachrichtenDivRechts = document.createElement('div');
+    nachrichtenDivRechts = document.createElement('div');
     nachrichtenDivRechts.className = "nachrichtenDivRechts";
     nachrichtenDivRechts.style = "display: flex; flex-direction: column; width: 280px"
 
@@ -482,27 +491,9 @@ function neueSeite(seiteNeu, id){
     nachrichtenFooterAbsendenButton.innerHTML = '<img src="icons/send.png" height=25 width=25>';
     nachrichtenFooterAbsendenButton.style = "float: right";
     nachrichtenFooterAbsendenButton.addEventListener('click', () => {
-      function nachrichtSpawnen(text, fremd){
-        var nachricht = document.createElement('div');
-        nachricht.innerText = text;
-        nachricht.style = "";
 
-        
-
-        if(fremd){
-          nachricht.style = "float: left; padding: 10px 10px 10px 10px; text-align: left; width: 280px; overflow-wrap: break-word";
-          nachrichtenDivLinks.appendChild(nachricht);
-        }
-        else {
-          nachricht.style = "float: right; padding: 10px 10px 10px 10px; text-align: right; width: 280px; overflow-wrap: break-word";
-          nachrichtenDivRechts.appendChild(nachricht);
-        }
       
-
-        
-      }
-      
-      nachrichtSpawnen(nachrichtenFooterTextfeld.value, false);
+      nachrichtSenden(nachrichtenFooterTextfeld.value, false);
 
       //TODO Absenden an Server
 
@@ -567,19 +558,155 @@ function neueSeite(seiteNeu, id){
     chatDivContent.appendChild(nachrichtenFooterDiv);
 
   }
-}
 
+  function nachrichtSpawnen(text, fremd){
+    var nachricht = document.createElement('div');
+    nachricht.innerText = text;
+    nachricht.style = "";
 
-async function getAllOpenChatsFromUser(){
-  while (eingeloggt){
-    let response = await fetch(CHATSERVER + 'GetAllOpenChatsFromUser.php', {
-      method: 'POST'
-    });
+    
+
+    if(fremd){
+      nachricht.style = "float: left; padding: 10px 10px 10px 10px; text-align: left; width: 280px; overflow-wrap: break-word";
+      nachrichtenDivLinks.appendChild(nachricht);
+    }
+    else {
+      nachricht.style = "float: right; padding: 10px 10px 10px 10px; text-align: right; width: 280px; overflow-wrap: break-word";
+      nachrichtenDivRechts.appendChild(nachricht);
+    }
   
-    response.json();
+
+    
   }
 
+  async function nachrichtSenden(text){
+    var data = new URLSearchParams({
+      'content': text,
+      'chat_id': chatNrToId.get(chatDiv.id)
+    });
+  
+    let response = await fetch(CHATSERVER + 'NewMessage.php', {
+      method: 'POST',
+      credentials: "include",
+      body: data
+    });
+  
+    if (response.ok){
+      nachrichtSpawnen(text, false);
+      return true;
+    }
+    return false;
+  }
+
+
+  async function getMessages(){
+    var nachrichten;
+
+    var url = CHATSERVER + 'GetMessages.php?chat_id=' + chatNrToId.get(chatDiv.id);
+    console.log(url);
+
+    //https://stackoverflow.com/questions/35038857/setting-query-string-using-fetch-get-request
+    var response = await fetch(url, {
+      method: 'GET',
+      credentials: "include"
+    })
+    .then(response=>response.json())
+    .then(data=>{ nachrichten = data });
+  
+    if (nachrichten){
+      console.log(nachrichten);
+      nachrichtenDivLinks.value = "";
+      nachrichtenDivRechts.value = "";
+
+      
+      for (var nachrichtId in nachrichten ){
+        if (nachrichten[nachrichtId].email== eingeloggteEmail){
+          nachrichtSpawnen(nachrichten[nachrichtId].content, false);
+        }
+        else {
+          nachrichtSpawnen(nachrichten[nachrichtId].content, true);
+        }
+      }
+      /*  PSEUDOCODE  
+      nachrichtenDivLinks.clear()
+      nachrichtenDivRechts.clear()
+      for (mes in messages){
+        if (mes.nichtMeine){
+          nachrichtSpawnen(mes.text, true)
+        }
+        else {
+          nachrichtSpawnen(mes.text, false)
+        }
+      }
+      */
+      return true;
+    }
+    return false;
+  }
+
+
+  async function getAllOpenChatsFromUser(){
+    while (eingeloggt){
+      var chat_ids;
+      let response = await fetch(CHATSERVER + 'GetAllOpenChatsFromUser.php', {
+        method: 'POST',
+        credentials: "include"
+      })
+      .then(response=>response.json())
+      .then(data=>{ chat_ids = data.chat_id });
+
+
+      for (var i = 0; i < chat_ids.length; i++){
+        var nrVonId = valueInMap(i)
+        if (nrVonId === null){
+          spawnChat();
+          neueSeite(SEITE_CHAT, chatDiv.id);
+          chatNrToId.set(chatDiv.id, chat_ids[i]);
+        }
+        else {
+          loadVars(nrVonId);
+        }
+        getMessages();
+      }
+
+      break;
+
+      
+
+      /*  PSEUDOCODE
+      while (alleChatsVonResponseDurchgehen){
+        chatNrToId.set(nrVomChat, idVonChatVonResponseBekommen)
+        moveElementIntoForeground()
+        getMessages()
+      }
+      */
+      
+
+      await sleep(2000);
+    }
+  }
+
+  function valueInMap(value){
+    var iterator = chatNrToId.values();
+    for (var i = 0; i < chatNrToId.size; i++){
+      if (iterator.next() == value){
+        return i;
+      }
+    }
+    return null;
+  }
+
+  //https://www.javatpoint.com/javascript-sleep
+  function sleep(milliseconds) {  
+    return new Promise(resolve => setTimeout(resolve, milliseconds));  
+  }  
 }
+
+
+
+
+
+
 
 /**
  * Entfernt ein Chat-Fenster mit bestimmter id
@@ -587,19 +714,23 @@ async function getAllOpenChatsFromUser(){
 function destroyChat(id){
   document.body.removeChild(document.getElementById(id));
   chatMap.delete(Number(id));
-  endChat(id);
+  //endChat(id);
   showChatButton();
 }
 
-async function endChat(idNr){
+async function endChat(idNr, richtigeIdBoolean){
   let chatId = chatNrToId.get(Number(idNr));
+  if (richtigeIdBoolean){
+    chatId = idNr;
+  } 
   if (chatId){
     var data = new URLSearchParams({
       'chat_id': chatId
     });
   
-    let response = await fetch(CHATSERVER + 'LogOff.php', {
-      method: 'PUT',
+    let response = await fetch(CHATSERVER + 'endChat.php', {
+      method: 'POST',
+      credentials: "include",
       body: data
     });
   
@@ -613,20 +744,37 @@ async function endChat(idNr){
 async function logOff(){
   //TODO soll eigentlich ohne Parameter auskommen (Die Email soll Serverseitig genommen werden)
   if (eingeloggteEmail){
+
+    //Alle Chats schliessen
+    eingeloggt = false;
+    var chat_ids;
+    let response = await fetch(CHATSERVER + 'GetAllOpenChatsFromUser.php', {
+      method: 'POST',
+      credentials: "include"
+    })
+    .then(response=>response.json())
+    .then(data=>{ chat_ids = data.chat_id });
+
+
+    for(var i = 0; i < chat_ids.length; i++){
+      console.log(chat_ids[i]);
+      endChat(chat_ids[i], true)
+    }
+
+    //Ausloggen
     var data = new URLSearchParams({
       'email': eingeloggteEmail
     });
   
-    let response = await fetch(CHATSERVER + 'LogOff.php', {
+    response = await fetch(CHATSERVER + 'LogOff.php', {
       method: 'POST',
+      credentials: "include",
       body: data
     })
   
     if (response.ok){
-      eingeloggt = false;
       return true;
     }
-  
   }
   return false;
 }

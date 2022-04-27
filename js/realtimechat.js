@@ -43,7 +43,7 @@ var eingeloggteEmail;
  * Spawned einen Chat mit einer inkrementierenden id
  */
 var anzGespawnterChats = 0;
-function spawnChat(){
+function spawnChat(chatBoolean){
   anzGespawnterChats++;
 
   chatDiv = document.createElement('div');
@@ -87,6 +87,10 @@ function spawnChat(){
 
   aktuelleSeite = SEITE_LOGIN;
 
+  if(chatBoolean){
+    aktuelleSeite = SEITE_CHAT;
+  }
+
   updateVars(anzGespawnterChats);
 
   neueSeite(aktuelleSeite, anzGespawnterChats);
@@ -129,6 +133,13 @@ function updateVars(id){
   };
 
   chatMap.set(id, chatObj);
+}
+
+//https://www.javascripttutorial.net/dom/manipulating/remove-all-child-nodes/
+function removeChildNodes(parent){
+  while(parent.firstChild){
+    parent.removeChild(parent.firstChild);
+  }
 }
 
 /**
@@ -460,6 +471,7 @@ function neueSeite(seiteNeu, id){
     }
   }
 
+
   function chatSeite(){
     var chatTitel = document.createElement('h1');
     chatTitel.textContent = "Tech Support"; //TODO soll vom Server fetchen
@@ -613,14 +625,17 @@ function neueSeite(seiteNeu, id){
     .then(response=>response.json())
     .then(data=>{ nachrichten = data });
   
-    if (nachrichten){
+    //https://stackoverflow.com/questions/956719/number-of-elements-in-a-javascript-object
+    if (Object.keys(nachrichten).length > 0){
       console.log(nachrichten);
-      nachrichtenDivLinks.value = "";
-      nachrichtenDivRechts.value = "";
+
+      
+      removeChildNodes(nachrichtenDivLinks);
+      removeChildNodes(nachrichtenDivRechts);
 
       
       for (var nachrichtId in nachrichten ){
-        if (nachrichten[nachrichtId].email== eingeloggteEmail){
+        if (nachrichten[nachrichtId].email == eingeloggteEmail){
           nachrichtSpawnen(nachrichten[nachrichtId].content, false);
         }
         else {
@@ -644,7 +659,7 @@ function neueSeite(seiteNeu, id){
     return false;
   }
 
-
+  var idsNichtbenutzt = null;
   async function getAllOpenChatsFromUser(){
     while (eingeloggt){
       var chat_ids;
@@ -655,21 +670,22 @@ function neueSeite(seiteNeu, id){
       .then(response=>response.json())
       .then(data=>{ chat_ids = data.chat_id });
 
-
+     
       for (var i = 0; i < chat_ids.length; i++){
-        var nrVonId = valueInMap(i)
+        var nrVonId = valueInMap(chat_ids[i]);
         if (nrVonId === null){
-          spawnChat();
-          neueSeite(SEITE_CHAT, chatDiv.id);
+          spawnChat(true);
+          //neueSeite(SEITE_CHAT, chatDiv.id);
           chatNrToId.set(chatDiv.id, chat_ids[i]);
         }
         else {
-          loadVars(nrVonId);
+          console.log(nrVonId);
+          loadVars(Number(nrVonId));
         }
         getMessages();
       }
 
-      break;
+      //break;
 
       
 
@@ -687,10 +703,11 @@ function neueSeite(seiteNeu, id){
   }
 
   function valueInMap(value){
-    var iterator = chatNrToId.values();
-    for (var i = 0; i < chatNrToId.size; i++){
-      if (iterator.next() == value){
-        return i;
+    //var iterator = chatNrToId.values();
+    for (var iterator of chatNrToId){
+      console.log(iterator);
+      if (iterator[1] == value){
+        return iterator[0];
       }
     }
     return null;
@@ -714,7 +731,7 @@ function neueSeite(seiteNeu, id){
 function destroyChat(id){
   document.body.removeChild(document.getElementById(id));
   chatMap.delete(Number(id));
-  //endChat(id);
+  endChat(id);
   showChatButton();
 }
 

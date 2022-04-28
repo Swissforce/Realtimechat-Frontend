@@ -369,26 +369,33 @@ function neueSeite(seiteNeu, id){
     }
   }
 
-  function nachLogInFunktion(){
+  async function nachLogInFunktion(){
+    //schaut, ob der eingeloggte User Techsupport ist
+    
+    var userrolle = null;
+    let response = await fetch(CHATSERVER + 'GetUserInformation.php', {
+      method: 'POST',
+      credentials: "include"
+    })
+    .then(response=>response.json())
+    .then(data=>{ userrolle = data["role_id"] });
+
+    if(userrolle == 1){
+      ichTechsupport = true;
+    }
+
     if(eingeloggt){
       neueSeite(SEITE_AUSWAHL, chatDiv.id);
       getAllOpenChatsFromUser();
     }
 
-    //schaut, ob der eingeloggte User Techsupport ist
-    /*
-    var userrolle;
-    let response = await fetch(CHATSERVER + 'getUser.php', {
-      method: 'POST',
-      credentials: "include"
-    })
-    .then(response=>response.json())
-    .then(data=>{ userrolle = data["user_id"] });
 
-    if(userrolle == 1){
-      ichTechsupport = true;
+    if (userrolle){
+      return true;
     }
-    */
+
+    return false;
+    
 
   }
 
@@ -450,16 +457,16 @@ function neueSeite(seiteNeu, id){
       supportButton.setAttribute("disabled", true);
     }
     else {
-      supportButton.addEventListener('click', () => {
-        createChat();
+      supportButton.addEventListener('click', async () => {
+        await createChat();
       });
     }
 
 
     var versendenButton = document.createElement('button');
     versendenButton.textContent = "Letzten Chat an Email senden";
-    versendenButton.addEventListener('click', () => {
-      var emailVerschickt = sendEmail(null);
+    versendenButton.addEventListener('click', async () => {
+      var emailVerschickt = await sendEmail(null);
 
       var infoVersendet = document.createElement('p');
 
@@ -491,8 +498,9 @@ function neueSeite(seiteNeu, id){
   async function createChat(){
     //TODO soll eigentlich ohne Parameter auskommen (Die Email soll Serverseitig genommen werden)
     var chatId;
+    
     var data = new URLSearchParams({
-      'email': eingeloggteEmail
+      'email': null
     });
 
     disEnableAll();
@@ -501,6 +509,7 @@ function neueSeite(seiteNeu, id){
       credentials: "include",
       body: data
     })
+
     .then(response=>response.text())
     .then(text=>{ chatId = text });
     disEnableAll();

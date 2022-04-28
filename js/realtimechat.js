@@ -55,6 +55,23 @@ function spawnChat(chatBoolean){
   chatDivHeader = document.createElement('div');
   chatDivHeader.className = "chatDivHeader";
   chatDivHeader.textContent = "Realtime-Chat Nr." + anzGespawnterChats;
+
+  
+  //https://www.tutorialspoint.com/generating-random-hex-color-in-javascript
+  const randomColor = () => {
+    let color = '#';
+    for (let i = 0; i < 6; i++){
+       const random = Math.random();
+       const bit = (random * 16) | 0;
+       color += (bit).toString(16);
+    };
+    return color;
+ };
+
+
+  if (chatBoolean){
+    chatDivHeader.style = "background-color: " +  randomColor();
+  }
   
   chatSchliessen = document.createElement('button');
   chatSchliessen.className = "chatSchliessen";

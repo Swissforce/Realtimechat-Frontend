@@ -1,6 +1,6 @@
 /**
  * @author Martin Düppenbecker
- * @since 27.04.22
+ * @since 28.04.22
  * 
  */
 
@@ -20,6 +20,7 @@ const SEITE_CHAT = 4;
 var aktuelleSeite;
 var chatDiv;
 var chatDivHeader;
+var chatTitel;
 var chatDivContent;
 var chatSchliessen;
 var chatZurueck;
@@ -34,6 +35,7 @@ var chatNrToId = new Map();
 
 var eingeloggt = false;
 var eingeloggteEmail;
+var ichTechsupport = false;
 
 
 //Funktionen
@@ -114,6 +116,7 @@ function loadVars(id){
   this.chatNr = chatObj.chatNr;
   this.nachrichtenDivLinks = chatObj.nachrichtenDivLinks;
   this.nachrichtenDivRechts = chatObj.nachrichtenDivRechts;
+  this.chatTitel = chatObj.chatTitel;
 }
 
 /**
@@ -129,7 +132,8 @@ function updateVars(id){
     aktuelleSeite:aktuelleSeite,
     chatNr:chatNr,
     nachrichtenDivLinks:nachrichtenDivLinks,
-    nachrichtenDivRechts:nachrichtenDivRechts
+    nachrichtenDivRechts:nachrichtenDivRechts,
+    chatTitel:chatTitel
   };
 
   chatMap.set(id, chatObj);
@@ -353,6 +357,22 @@ function neueSeite(seiteNeu, id){
       neueSeite(SEITE_AUSWAHL, chatDiv.id);
       getAllOpenChatsFromUser();
     }
+
+    //schaut, ob der eingeloggte User Techsupport ist
+    /*
+    var userrolle;
+    let response = await fetch(CHATSERVER + 'getUser.php', {
+      method: 'POST',
+      credentials: "include"
+    })
+    .then(response=>response.json())
+    .then(data=>{ userrolle = data["user_id"] });
+
+    if(userrolle == 1){
+      ichTechsupport = true;
+    }
+    */
+
   }
 
   async function register(emailP, usernameP, passwordP){
@@ -408,14 +428,21 @@ function neueSeite(seiteNeu, id){
   function auswahlSeite(){
     var supportButton = document.createElement('button');
     supportButton.textContent = "Support kontaktieren";
-    supportButton.addEventListener('click', () => {
-      createChat();
-    })
+    
+    if (ichTechsupport){
+      supportButton.setAttribute("disabled", true);
+    }
+    else {
+      supportButton.addEventListener('click', () => {
+        createChat();
+      });
+    }
+
 
     var versendenButton = document.createElement('button');
     versendenButton.textContent = "Letzten Chat an Email senden";
     versendenButton.addEventListener('click', () => {
-      var emailVerschickt = sendEmail();
+      var emailVerschickt = sendEmail(null);
 
       var infoVersendet = document.createElement('p');
 
@@ -446,6 +473,7 @@ function neueSeite(seiteNeu, id){
 
   async function createChat(){
     //TODO soll eigentlich ohne Parameter auskommen (Die Email soll Serverseitig genommen werden)
+    var chatId;
     var data = new URLSearchParams({
       'email': eingeloggteEmail
     });
@@ -456,10 +484,12 @@ function neueSeite(seiteNeu, id){
       credentials: "include",
       body: data
     })
+    .then(response=>response.text())
+    .then(text=>{ chatId = text });
     disEnableAll();
 
-    if (response.ok){
-      chatNrToId.set(chatDiv.id, response.text);
+    if (chatId){
+      chatNrToId.set(chatDiv.id, chatId);
       neueSeite(SEITE_CHAT, chatDiv.id);
       return true;
     }
@@ -475,39 +505,9 @@ function neueSeite(seiteNeu, id){
     }
   }
 
-  async function sendEmail(chat_id){
-    let response;
-
-    if (chat_id){
-      var data = new URLSearchParams({
-        'chat_id': chat_id
-      });
-
-      response = await fetch(CHATSERVER + 'SendEmail.php', {
-        method: 'POST',
-        credentials: "include",
-        body: data
-      });
-    }
-
-    else {
-      response = await fetch(CHATSERVER + 'SendEmail.php', {
-        method: 'POST',
-        credentials: "include"
-      });
-    }
-
-    if (response.ok){
-      return true;
-    }
-    else {
-      return false;
-    }
-  }
-
 
   function chatSeite(){
-    var chatTitel = document.createElement('h1');
+    chatTitel = document.createElement('h1');
     chatTitel.textContent = "Tech Support"; //TODO soll vom Server fetchen
 
     var nachrichtenDiv = document.createElement('div');
@@ -675,8 +675,12 @@ function neueSeite(seiteNeu, id){
       removeChildNodes(nachrichtenDivLinks);
       removeChildNodes(nachrichtenDivRechts);
 
-      
+      var ersteNachricht = true;
       for (var nachrichtId in nachrichten ){
+        if (ichTechsupport && ersteNachricht){
+          chatTitel.textContent = nachrichten[nachrichtId].username;
+          ersteNachricht = false;
+        }
         if (nachrichten[nachrichtId].email == eingeloggteEmail){
           nachrichtSpawnen(nachrichten[nachrichtId].content, false);
         }
@@ -747,7 +751,7 @@ function neueSeite(seiteNeu, id){
             console.log("catch: " + nrVonId)
           }
         }
-        getMessages();
+        await getMessages();
       }
 
       letzte_chat_ids = chat_ids;
@@ -790,6 +794,27 @@ function neueSeite(seiteNeu, id){
 
 
 
+async function sendEmail(chat_id){
+  let response;
+
+  var data = new URLSearchParams({
+    'chat_id': chat_id
+  });
+
+  response = await fetch(CHATSERVER + 'SendEmail.php', {
+    method: 'POST',
+    credentials: "include",
+    body: data
+  });
+
+
+  if (response.ok){
+    return true;
+  }
+  else {
+    return false;
+  }
+}
 
 
 
@@ -850,7 +875,7 @@ async function logOff(){
 
     for(var i = 0; i < chat_ids.length; i++){
       console.log(chat_ids[i]);
-      endChat(chat_ids[i], true)
+      endChat(chat_ids[i], true);
     }
 
     //Ausloggen

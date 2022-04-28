@@ -698,11 +698,12 @@ function neueSeite(seiteNeu, id){
           chatTitel.textContent = nachrichten[nachrichtId].username;
           ersteNachricht = false;
         }
+        var zeit = "(" + nachrichten[nachrichtId].send_time.substr(-8,5) + ")";
         if (nachrichten[nachrichtId].email == eingeloggteEmail){
-          nachrichtSpawnen(nachrichten[nachrichtId].content, false);
+          nachrichtSpawnen(nachrichten[nachrichtId].content + " " + zeit, false);
         }
         else {
-          nachrichtSpawnen(nachrichten[nachrichtId].content, true);
+          nachrichtSpawnen(zeit + " " + nachrichten[nachrichtId].content, true);
         }
       }
       return true;

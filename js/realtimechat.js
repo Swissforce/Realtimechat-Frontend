@@ -539,14 +539,14 @@
       .then(text=>{ chatId = text });
       disEnableAll();
 
-      if (chatId){
+      if (!isNaN(chatId)){
         chatNrToId.set(chatDiv.id, chatId);
         neueSeite(SEITE_CHAT, chatDiv.id);
         return true;
       }
 
       else {
-        if (response.status == 503){
+        if (chatId == "no available tech support was found"){
           alert("Es sind momentan keine TechSupports verfügbar. Bitte probieren Sie es später wieder");
         }
         else {

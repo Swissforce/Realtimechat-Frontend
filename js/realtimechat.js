@@ -1,6 +1,6 @@
   /**
    * @author Martin Düppenbecker
-   * @since 29.04.22
+   * @since 01.05.22
    * 
    * Frontend für einen Realtimechat mit mehreren Fenstern, für die Benützung als Techsupport-Platform gedacht
    * IDPA-Schülerprojekt der Kantonsschule Hottingen und des Bildungszentrums Zürichsees
@@ -721,15 +721,15 @@
 
         var ersteNachricht = true;
         for (var nachrichtId in nachrichten ){
-          if (ichTechsupport && ersteNachricht){
-            chatTitel.textContent = nachrichten[nachrichtId].username;
-            ersteNachricht = false;
-          }
           var zeit = "(" + nachrichten[nachrichtId].send_time.substr(-8,5) + ")";
           if (nachrichten[nachrichtId].email == eingeloggteEmail){
             nachrichtSpawnen(nachrichten[nachrichtId].content + " " + zeit, false);
           }
           else {
+            if (ichTechsupport && ersteNachricht){
+              chatTitel.textContent = nachrichten[nachrichtId].username;
+              ersteNachricht = false;
+            }
             nachrichtSpawnen(zeit + " " + nachrichten[nachrichtId].content, true);
           }
         }
